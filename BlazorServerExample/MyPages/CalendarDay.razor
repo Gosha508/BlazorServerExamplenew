@@ -1,0 +1,234 @@
+﻿@page "/CalendarDay/{idday:int}"
+@using DB2.Model
+@using System.Globalization;
+@if (UserAut.Role == "T")
+{
+    <form class="mb-3">
+    <h3>Создать новое расписание</h3>
+    <div>
+        Дисциплины/направления:
+            <select  class="form-control" @bind="stringselectectDis">
+            @foreach (var dis in Disciplines)
+            {
+                <option value="@dis.Name"> @dis.Name </option>
+            }
+
+        </select>
+    </div>
+    <div>
+        Группа:
+            <select class="form-control" @bind="stringselectectgroup">
+            @foreach (var dis in Groups)
+            {
+                <option value="@dis.Name"> @dis.Name </option>
+            }
+
+        </select>
+    </div>
+    <div>
+        Учитель:
+            <select class="form-control" @bind="stringselectectTeacher">
+            @foreach (var teacher in TeachersList)
+            {
+                <option value="@teacher.Name"> @teacher.Name </option>
+
+            }
+
+        </select>
+
+        @*        <div style="display: flex; flex-direction: column; align-items: flex-start;">
+    <label for="timeSpanInput2">Дата :</label>
+    <input type="text" id="timeSpanInput2" @bind="@Data" placeholder="дд/мм/гггг" />
+    </div>*@
+
+        <div  style="display: flex; flex-direction: column; align-items: flex-start;">
+            <label for="timeSpanInput1">Время начала :</label>
+                <input class="form-control"  type="text" id="timeSpanInput1" @bind="@start" placeholder="00:00" />
+        </div>
+
+        <div style="display: flex; flex-direction: column; align-items: flex-start;">
+            <label for="timeSpanInput2">Время окончания :</label>
+                <input class="form-control"  type="text" id="timeSpanInput2" @bind="@end" placeholder="00:00" />
+        </div>
+            <div style="display: flex; flex-direction: column; align-items: flex-start;">
+                <label for="timeSpanInput2">Описание:</label>
+                <input class="form-control" type="text" id="timeSpanInput2" @bind="@text"  />
+            </div>
+        <div/>
+            <button class="btn btn-primary mb-3" type="button" @onclick="@(async()=> {
+            await  selectdiscp(stringselectectDis);
+            await selectgroup(stringselectectgroup);
+            await  selectTeacher(stringselectectTeacher);
+            await CreateLesson();
+           await OnInitializedAsync();
+        } )">
+            Создать
+        </button>
+
+
+    </div>
+    </form>
+}
+<h3>Расписание</h3>
+@if (Lessonsopen == null) // сделать выпадающие списки и придумать как задать время
+{
+    <p>Loading...</p>
+}
+else if (Lessonsopen.Count == 0)
+{
+    <p>No schedules found</p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+              @*   <th>id</th> *@
+                <th>Дисциплина</th>
+                <th>Преподователь</th>
+                <th>Группа</th>
+                <th>Время начала</th>
+                <th>Время окончания</th>
+                @* <th>Дата</th>*@
+                <th>Открыть</th>
+                <th>Удалить</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var schedule in Lessonsopen)
+            {
+                <tr>
+                    @*<td>@schedule.Id</td>*@
+                    <td>@schedule.Discipline.Name</td>
+                    <td>@schedule.MyUser.Name</td>
+                    <td>@schedule.Groups.Name</td>
+                    <td>@(schedule.TimeStart.HasValue ? schedule.TimeStart.Value.ToShortTimeString() : "N/A")</td>
+                    <td>@(schedule.TimeEnd.HasValue ? schedule.TimeEnd.Value.ToShortTimeString() : "N/A")</td>
+                    @*   <td>@schedule.dateTime.ToLongDateString() </td>*@
+                    <td>
+                        <button type="button" class="btn btn-primary" @onclick="@(async()=> {await OpenLesson(schedule);  } )"> Открыть </button>
+                    </td>
+                    <td><button type="button" class="btn btn-light" @onclick="@(async()=> {await DeleteLesson(schedule);  } )" disabled="@(UserAut.Role != "T")">
+                            <span class="oi oi-trash"></span>
+                        </button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+    @inject NavigationManager NavigationManager
+    @inject IGroups Group;
+    @inject ISchedule SchedulesService;
+    @inject IDiscipline Discipline;
+    @inject ILesson lesson;
+    @inject IMyUser MyUser;
+@code
+{
+
+
+    [Parameter]
+    public int idday { get; set; }
+    DateTime timeS;
+    DateTime timeE;
+    string start;
+    string end;
+
+    string text;
+
+    List<Lesson> Lessonsopen;
+    protected override async Task OnInitializedAsync()
+    {
+        Lessonsopen = await SchedulesService.GetAllLessons(idday); // await lesson.GetAll(idday);
+
+
+
+        Disciplines = await Discipline.GetAll();
+        Groups = await Group.GetAll();
+        TeachersList = await MyUser.GetAllTeacher();
+        shedul = await SchedulesService.GetAsync(idday);
+        timeS = shedul.dateTime;
+        timeE = shedul.dateTime;
+        start = timeS.ToShortTimeString();
+        end = timeE.ToShortTimeString();
+    }
+
+    private async Task OpenLesson(Lesson lesson)
+    {
+        NavigationManager.NavigateTo($"/OpenLesson/{lesson.Id}");
+
+    }
+    private async Task DeleteLesson(Lesson schedules)
+    {
+
+    }
+
+    string stringselectectDis = "";
+    DB2.Model.Discipline selectDis;
+    private List<Discipline> Disciplines;
+
+    string stringselectectgroup = "";
+    DB2.Model.Groups selectGroup;
+    private List<DB2.Model.Groups> Groups;
+
+
+    string stringselectectTeacher = "";
+    MyUser Teacher;
+    private List<MyUser> TeachersList = new List<MyUser>();
+    Sсhedule shedul;
+    private async Task CreateLesson()
+    {
+        // if (selectDis != null && selectGroup != null && Teacher != null)
+        //     await lesson.CreateAsync(new Lesson() {
+        //             Description = "",
+        //             Discipline = await Discipline.GetAsync( selectDis.Id),
+        //             MyUser = Teacher,
+        //             Groups = selectGroup,
+        //             TimeStart = splitTime(timeS, start),
+        //             TimeEnd = splitTime(timeE, end),
+        //             Sсhedule = shedul
+        //     });
+
+        //   await lesson.CreateAsync("", selectDis, Teacher, selectGroup, splitTime(timeS, start), splitTime(timeE, end), shedul);// ошибка ругается что типо создаю с тем же id?
+        if (selectDis != null && selectGroup != null && Teacher != null)
+        {
+            await lesson.CreateAsync(text, selectDis.Id, Teacher.Id, selectGroup.Id, splitTime(timeS, start), splitTime(timeE, end), shedul.Id);
+        }
+
+    }
+
+    //StateHasChanged();
+
+
+    private DateTime splitTime(DateTime dateTime, string h)
+    {
+        DateTime time = dateTime;
+        string hour = h;
+        string[] parts = hour.Split(':');
+        int newHour = int.Parse(parts[0]);
+        int newMinute = int.Parse(parts[1]);
+        time = time.AddHours(newHour - time.Hour);
+        time = time.AddMinutes(newMinute - time.Minute);
+        return time;
+    }
+    private async Task selectdiscp(string name)
+    {
+        //selectDis = await Discipline.FindDis(name);
+        selectDis = Disciplines.FirstOrDefault(x => x.Name.Equals(name));
+        // записатьв в лист всех учителей с этой дисциплиной // тем самым уменишит кол во учителй
+
+    }
+    private async Task selectgroup(string name)
+    {
+        //selectGroup = await Group.FindGroup(name);
+        selectGroup = Groups.FirstOrDefault(x => x.Name.Equals(name));
+
+    }
+    private async Task selectTeacher(string name)
+    {
+        //selectGroup = await Group.FindGroup(name);
+        Teacher = TeachersList.FirstOrDefault(x => x.Name.Equals(name));
+
+    }
+
+}

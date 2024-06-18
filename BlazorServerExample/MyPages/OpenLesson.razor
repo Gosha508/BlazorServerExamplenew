@@ -1,0 +1,163 @@
+﻿<h3>Занятие</h3>
+@page "/OpenLesson/{idLesson:int}"
+
+@inject ILesson LessonThis
+@inject IAttendance AttendanceThis
+<div>@($"Учитель - {Lessons.MyUser.Name}") </div>
+<div>@($"Группа - {Lessons.Groups.Name}") </div>
+<div>@($"Время начала - {s}") </div>
+<div>@($"Время завершения - {e}") </div>
+<div>@($"Описание:") </div>
+<div>@($"{(Lessons.Description) }") </div>
+@if (UserAut.Role == "T")
+{<div>Учащиеся</div>
+    <table  class="table-striped">
+
+        <thead>
+            <tr>
+                <td>Имя </td>
+                <td>Отметить посещение </td>
+                <td>Состояние посещения </td>
+                <td>Оценка </td>
+                <td>Сменить оценку </td>
+            </tr>
+        </thead>
+
+        <tbody>
+            @foreach (var learner in Learners)
+            {
+                <tr>
+                    <td>
+                        @learner.Name
+                    </td>
+                    <td class="text-center">
+                        <button type="button" class="btn btn-outline-dark" style="background-color : green" @onclick="@(async()=>{await AddAtten( idLesson, learner.Id,  true);})">✓</button>
+                        <button type="button" class="btn btn-outline-dark" style="background-color : red" @onclick="@(async()=>{await AddAtten( idLesson, learner.Id,  false);   } )">X</button>
+
+                    </td>
+                    <td class="text-center"> 
+                        @if (ReturnString(idLesson, learner.Id).Result == "✓")
+                        {
+                            <p style=" color:green ; text-align: center ">@ReturnString(idLesson, learner.Id).Result </p>
+                        }
+                        else
+                        {
+                            <p style="color:red ; text-align: center">@ReturnString(idLesson, learner.Id).Result </p>
+                        }
+                    </td>
+                    <td class="text-center">
+                        <p style=" text-align: center">  @ReturnGrade(idLesson, learner.Id).Result;</p>
+
+                    </td>
+                    <td class="text-center">
+                        @if (ReturnString(idLesson, learner.Id).Result == "✓")
+                        {
+                            <p>
+                                <select 
+                                @onchange="async (args) => await AddGrade(idLesson, learner.Id, args.Value.ToString())"
+                                >
+                                    @foreach (var grade in Grades)
+                                    {
+                                        <option value="@grade" style="color:red; text-align: center">@grade</option>
+                                    }
+                                </select>
+                            </p>
+                        }
+                        else
+                        {
+                            <p style="color:red; text-align: center">Х</p>
+                        }
+
+
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    [Parameter]
+    public int idLesson { get; set; }
+    Lesson Lessons;
+    List<MyUser> Learners;
+    DateTime TimeS;
+    DateTime TimeE;
+    List<string> Grades = new List<string> { "0", "1", "2", "3", "4", "5", "+", "++", "+++" };
+    string TakeGrade;
+    string s { get; set; }
+    string e { get; set; }
+    protected override async Task OnInitializedAsync()
+    {
+        Lessons = await LessonThis.GetAsync(idLesson);
+        Learners = Lessons.Groups.MyUser.ToList();
+        TimeS = Lessons.TimeStart.Value;
+        TimeE = Lessons.TimeEnd.Value;
+         s = TimeS.ToString("hh:mm");
+         e = TimeE.ToString("hh:mm"); // починить время
+    }
+    private async Task<Attendance> GetAtten(int idshed, int idlern)//
+    {
+        return await AttendanceThis.GetAttendance(idshed, idlern);
+    }
+    private async Task UpdateAtten(Attendance attendance)
+    {
+        AttendanceThis.Update(attendance);
+        //await OnInitializedAsync();
+    }
+    private async Task AddAtten(int idSchedules, int idLearner, bool ispresent) // проверка если имеется изменить если не имеется создать
+    {
+        var a = await GetAtten(idSchedules, idLearner);
+        if (a == null)
+        {
+            await AttendanceThis.CreateAttendance(idSchedules, idLearner, ispresent, "");
+        }
+        else
+        {
+            var atten = await GetAtten(idSchedules, idLearner);
+            atten.IsPresent = ispresent;
+            
+            await UpdateAtten(atten);
+
+
+        }
+
+        await OnInitializedAsync();
+    }
+    private async Task AddGrade(int idSchedules, int idLearner, string value)
+    {
+        var atten = await GetAtten(idSchedules, idLearner);
+        if (atten != null)
+        {
+            atten.Grades = value;
+            await UpdateAtten(atten);
+            StateHasChanged();
+        }
+
+    }
+    private async Task<string> ReturnGrade(int idshed, int idlern)
+    {
+        var a = await GetAtten(idshed, idlern);
+        return a?.Grades;
+    }
+    private async Task<string> ReturnString(int idshed, int idlern)
+    {
+        var x = await AttendanceThis.GetAttendance(idshed, idlern);
+        if (x == null)
+        {
+            return "Отсутствует отметка";
+        }
+        else
+        {
+            if (x.IsPresent)
+            {
+                return "✓";
+            }
+            else
+            {
+                return "Х";
+            }
+        }
+
+    }
+}

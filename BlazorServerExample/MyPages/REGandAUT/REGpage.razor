@@ -1,0 +1,83 @@
+﻿@using DB2.Interface
+@using DB2.Model
+
+@page "/reg"
+@*<h3>REGpage</h3>*@
+
+<h1>Регистрация</h1>
+<div>
+    <form>
+        <div style="display: flex; flex-direction: column; align-items: flex-start;">
+            <label for="newUserName">ФИО :</label>
+            <input type="text" id="newUserName" @bind="@NewUsername" />
+        </div>
+
+        <div style="display: flex; flex-direction: column; align-items: flex-start;">
+            <label for="newemail" style="width: 70px;">Почта: </label>
+            <input type="email" id="newemail" @bind="@NewEmail" />
+        </div>
+
+        <div style="display: flex; flex-direction: column; align-items: flex-start;">
+            <label for="newPassword">Пароль:</label>
+            <input type="password" id="newPassword" @bind="@NewPassword" />
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: flex-start;">
+            <label for="newPassword"> Повторите пароль:</label>
+            <input type="password2" id="newPassword2" @bind="@NewPassword2" />
+        </div>
+
+        @*<label><input type="checkbox" @bind-value="@isChecked" /> Уникальный код </label>*@
+        @if (isChecked)
+        {
+            <div style="display: flex; flex-direction: column; align-items: flex-start;">
+                <label for="newPassword">Введите уникальный код:</label>
+                <input type="password" id="newPassword" @bind="@inputValue" />
+            </div>
+        }
+        <button class="btn btn-outline-dark" type="button" @onclick="@Register">@("Рeгистрация")</button>
+        <div> @text </div>
+    </form>
+</div>
+@inject IMyUser MyUser;
+@code {
+
+    private string text { get; set; }
+    private string NewUsername { get; set; }
+    private string NewEmail { get; set; }
+    private string NewPassword { get; set; }
+    private string NewPassword2 { get; set; }
+
+    private bool isChecked = false;
+    private string inputValue { get; set; }
+    private string Code { get; set; }
+
+    private bool result { get; set; }
+    protected override async Task OnInitializedAsync()
+    {
+
+    }
+    private async Task Register()
+    {
+        if(NewPassword == NewPassword2)
+        {
+            var user = new MyUser { Name = NewUsername, Email = NewEmail, Password = NewPassword , Role ="L"};
+            result = await MyUser.CreateAsync(user);
+            if (result)
+            {
+                text = "Успешно зарегестрирован";
+            }
+            else
+            {
+                text = "Ошибка при регистрации (Возможно пользователь с данной почтой уже зарегестрирован или вы не ввели все данные)";
+            }
+        }
+        else
+        {
+
+            text = "Не коректный ввод";
+        }
+
+
+    }
+
+}

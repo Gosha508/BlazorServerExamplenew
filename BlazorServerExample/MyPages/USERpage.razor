@@ -1,0 +1,32 @@
+﻿@page "/UserPage"
+@if (UserAut.Id != null)
+{
+    <h3>Страница пользователя</h3>
+    <div>@($"{UserAut.Name}") </div>
+    <div>@($"{UserAut.Email}") </div>
+    <button class="btn btn-outline-dark" type="button" @onclick="@ExitUSER">@("Выйсти из системы")</button>
+
+    @inject NavigationManager NavigationManager
+    @code {
+
+        private async Task ExitUSER()
+        {
+            UserAut.Id = null;
+            UserAut.Email = null;
+            UserAut.Name = null;
+            UserAut.Role = null;
+            UserAut.GroupId = null;
+            NavigationManager.NavigateTo("/start", forceLoad: true);
+        }
+
+    }
+<GettingData/>
+    }
+    else
+    {
+    @("Eror userAUT id == null")
+    }
+    @code
+{
+
+    }

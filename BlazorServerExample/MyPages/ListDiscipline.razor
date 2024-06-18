@@ -1,0 +1,69 @@
+﻿@page "/listdisc"
+
+@if (UserAut.Role == "T")
+{
+    <h3>Создать дисциплину </h3>
+    <div style="display: flex; flex-direction: column; align-items: flex-start;">
+        <label for="Textpole1">Название :</label>
+        <input type="text" id="Textpole1" @bind="@TextField" />
+    </div>
+    <button class="btn btn-outline-dark" type="button" @onclick="@CreateDisc"> Добавить  </button>
+}
+<h2>Список дисциплин</h2>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Название</th>
+            <th>Удалить</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (disciplines != null)
+        {
+            @foreach (var d in disciplines)
+            {
+                <tr>
+                    <td>@d.Name</td>
+                    <td><button style="background-color:red" type="button" class="oi oi-trash btn btn-outline-dark" @onclick="@(async () => await DeleteDisc(d.Id))" disabled="@(UserAut.Role != "T")"> </button></td>
+                </tr>
+            }
+        }
+    </tbody>
+</table>
+@* 
+<a class="btn btn-login" @onclick="RedirectPage">Log in</a>
+
+<Popup @ref="popupRef" /> *@
+
+
+@code {
+    @inject IDiscipline disc
+    List<Discipline> disciplines;
+    private string TextField { get; set; }
+    protected override async Task OnInitializedAsync()
+    {
+        disciplines = await disc.GetAll();
+    }
+    private async Task CreateDisc()
+    {
+        await disc.CreateAsync(new Discipline { Name = TextField });
+        disciplines = await disc.GetAll();
+        // StateHasChanged();
+    }
+    private async Task DeleteDisc(int id)
+    {
+        await disc.RemoveAsync(id);
+        disciplines = await disc.GetAll();
+    }
+
+    
+        private Popup popupRef;
+
+        private void RedirectPage()
+        {
+            // Shows the popup at the center of the screen
+            popupRef.Show("Popup body text");
+        }
+    
+
+}

@@ -1,0 +1,125 @@
+﻿@using Microsoft.EntityFrameworkCore
+@using static BlazorServerExample.Calendar
+@using DB2.Model
+@page "/calendar"
+<h3>Календарь</h3>
+
+<link href="BlazorServerExample/MyPages/Calendar.razor.css" rel="stylesheet" type="text/css">
+
+<button class="custom-button" @onclick="() => { monthsAway--; CreateMonth(); }">Прошлый месяц</button>
+        
+<h1 class="text-center">@monthName, @year</h1>
+<button class="custom-button" @onclick="() => { monthsAway++; CreateMonth(); }">Следующий месяц</button>
+
+
+<div> </div>
+<section class="section1">
+    <div>Пн</div>
+    <div>Вт</div>
+    <div>Ср</div>
+    <div>Чт</div>
+    <div>Пт</div>
+    <divred>Сб</divred>
+    <divred>Вс</divred>
+
+    @for (int i = 1; i < numDummyColumn; i++)
+    {
+        <divwhite></divwhite>
+    }
+    @for (int i = 1; i <= monthEnd.Day; i++)
+    {
+        //var calendarItem =
+        //items.FirstOrDefault(n => n.Date == new DateTime(year, month, i));
+        <divwhite>
+            @if (i <= DateTime.DaysInMonth(year, month))
+                {
+                int dayValue = i;
+                <button class="custom-button" @onclick="@(e =>CreateDayAndOpen(dayValue))"> <h2> @i </h2></button>
+                }
+            @*<h2>@i</h2>*@
+
+            @*@if (calendarItem != null)
+                {
+                    <p>@calendarItem.Name</p>
+                }*@
+        </divwhite>
+    }
+    @*<form>
+            <div class="form-group">
+                <label for="inputDate">Введите дату:</label>
+                <input type="date" class="form-control">
+            </div>
+        </form>*@
+</section>
+@code {
+    string monthName = "";
+    DateTime monthEnd;
+    int monthsAway = 0;
+    int numDummyColumn = 0;
+    int year = 2024;
+    int month = 0;
+    List<CalendarItem> items = new List<CalendarItem>();
+    protected override void OnInitialized()
+    {
+        //items.Add(new CalendarItem(new DateTime(2024, 03, 11), "Test day 1"));
+        //items.Add(new CalendarItem(new DateTime(2024, 03, 30), "Test day 2"));
+        //items.Add(new CalendarItem(new DateTime(2024, 02, 25), "123123"));
+        //items.Add(new CalendarItem(new DateTime(2025, 01, 01), "New Years"));
+        CreateMonth();
+    }
+
+    void CreateMonth()
+    {
+        var tempDate = DateTime.Now.AddMonths(monthsAway);
+        month = tempDate.Month;
+        year = tempDate.Year;
+
+        DateTime monthStart = new DateTime(year, month, 1);
+        monthEnd = monthStart.AddMonths(1).AddDays(-1);
+        monthName = monthStart.Month switch
+        {
+            1 => "Январь",
+            2 => "Февраль",
+            3 => "Март",
+            4 => "Апрель",
+            5 => "Май",
+            6 => "Июнь",
+            7 => "Июль",
+            8 => "Август",
+            9 => "Сентябрь",
+            10 => "Октябрь",
+            11 => "Ноябрь",
+            12 => "Декабрь",
+            _ => ""
+        };
+
+        numDummyColumn = (int)monthStart.DayOfWeek;
+    }
+    @inject NavigationManager NavigationManager
+    @inject ISchedule Schedule
+    private async Task CreateDayAndOpen(int date)
+    {
+       DateTime time = new DateTime(year, month, date);
+        var shed = await Schedule.FindData(time);
+        if (shed == null)
+        {
+            await CreateDay(time);
+            shed = await Schedule.FindData(time);
+           await OpenDay(shed.Id);
+        }
+        else
+        {
+            await OpenDay(shed.Id);
+        }
+    }
+    private async Task CreateDay(DateTime date)
+    {
+        var schedule = new Sсhedule { Id = Convert.ToInt32(date.ToString("yyyyMMdd")), dateTime = date }; // <----
+        await Schedule.CreateAsync(schedule);
+    }
+
+    private async Task OpenDay(int idday)
+    {
+        NavigationManager.NavigateTo($"/CalendarDay/{idday}");
+    }
+}

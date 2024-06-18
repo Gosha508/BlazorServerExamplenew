@@ -1,0 +1,115 @@
+﻿<h3>Группа </h3>
+@page "/OpenGroupPage/{idgroup:int}"
+@if (UserAut.Role == "T")
+{
+    <h3>Добавить в группу</h3>
+    <div style="display: flex; flex-direction: column; align-items: flex-start;">
+        <label for="name">Введите имя :</label>
+        <input type="text" id="name" @bind="@searchName" />
+    </div>
+}
+<div> <button  type="submit" @onclick="@matchingPeople"> Найти </button> </div>
+@if (FindsLearners == null)
+{
+
+}
+else if (FindsLearners.Count == 0)
+{
+    <p>No Learners found</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Название </th>
+                <th>Добавить в группу </th>
+
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var x in FindsLearners)
+            {
+                <tr>
+                    <th> @x.Name<button type="submit" class="btn btn-outline-dark" @onclick="@(async()=> await addGroup(FindsGroup, x))"> Добавить </button></th>
+                </tr>
+            }
+        </tbody>
+
+    </table>
+}
+<h3>Состав группы</h3>
+@if (Groups == null)
+{
+    <p>Loading...</p>
+}
+else if (Groups.Count == 0)
+{
+    <p>No Learners found</p>
+}
+else
+{
+    <table>
+        <thead class="table">
+            <tr>
+                <th>Название </th>
+                <th>Удалить из группы </th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var x in Groups)
+            {
+                <tr>
+                    <th> @x.Name</th>
+                      @if(UserAut.Role == "T") {
+                          <th><button class="btn" type="submit" style="background-color: red;" @onclick="@(async()=> await delete(x))"> X </button></th>
+                      }
+                </tr>
+
+            }
+        </tbody>
+
+    </table>
+}
+
+
+@code {//написать вывод данных,запись,поиск
+        @inject IMyUser user;
+        @inject IGroups group;
+        
+        [Parameter]
+        public int idgroup { get; set; }
+
+    List<MyUser> Groups;
+    
+    protected override async Task OnInitializedAsync()
+    {
+       await  GetUserList();
+       await GetInGroupLearner();
+    }
+    private async Task GetUserList()
+    {
+        Groups = await user.GetGroupList(idgroup);
+        // StateHasChanged();
+    }
+    private async Task GetInGroupLearner()
+    {
+        FindsGroup = await group.GetGroupbyId(idgroup);
+    }
+    private async Task delete(MyUser User)
+    {
+        // проумать отвзяку
+    }
+    private Groups FindsGroup;
+    private string searchName;
+    private List<MyUser> FindsLearners;
+    private async Task matchingPeople()
+    {
+        FindsLearners = await user.GetAsyncString(searchName);
+    }
+    private async Task addGroup(Groups groups, MyUser learner)
+    {
+        await group.addUserGroup(groups.Id, learner.Id);
+        await OnInitializedAsync();
+    }
+}

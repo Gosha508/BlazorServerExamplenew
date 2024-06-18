@@ -1,0 +1,203 @@
+﻿@using System.Globalization
+@using BlazorServerExample.Common
+
+@* <h3>WeekPage</h3> *@
+@page "/WeekPage1"
+
+<h2>Расписание </h2>
+<h4>@($"Сегодня-{dateToDay.ToShortDateString()}")</h4>
+@* <h4>@($"Неделя {currentWeek.ToString()}")</h4> *@
+
+@* @($"день недели-{currentDayOfWeek.ToString()}")) *@
+
+<h2></h2>
+@* <table class="table">
+    <thead>
+        <tr>
+            <th>Дата</th>
+            <th>Занятия</th>
+            <th>id</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (Sсhedules != null)
+        {
+            @foreach (var d in Sсhedules)
+            {
+                <tr>
+                    <td>@d.dateTime.ToShortDateString()</td>
+                    <td>@foreach(var l in d.Lessons)
+                        {
+                            <div>@($"{l.Discipline.Name}")  </div>
+                        }
+                    </td>
+                    <td>@d.Id</td>
+                </tr>
+            }
+        }
+            else
+            {
+                @("No data")
+            }
+    </tbody>
+</table>
+ *@
+<button type="button" class="btn btn-outline-dark" @onclick="@(async()=> await LastWeek())"> Прошлая неделя</button>
+<button type="button" class="btn btn-outline-dark" @onclick="@(async()=> await NextWeek())"> Следующая неделя</button>
+<h4>@($"Неделя {currentWeek.ToString()}")</h4>
+@if (Sсhedules.Count == 0)
+{
+    @($"Занятий на неделе {currentWeek.ToString()} не найдены")
+}
+else
+{
+    @foreach (var d in Sсhedules)
+    {
+        <form>
+            <h3>@GetNameWeek(d.dateTime) </h3>
+            <h3>@d.dateTime.ToShortDateString()</h3>
+
+
+            <table class="table table-striped table-hover ">
+                <thead>
+                    <tr>
+                        <th width="10%">Время</th>
+                        <th>Занятие</th>
+                    </tr>
+                </thead>
+                <tbody>
+
+                    @if (d.Lessons == null || d.Lessons.Count == 0)
+                    {
+                        <tr>
+                            <td> </td>
+                            <td> @($"Занятия на день {d.dateTime.ToShortDateString()} не найдены") </td>
+
+                        </tr>
+
+                    }
+                    else
+                    {
+                      
+                        @foreach (var l in d.Lessons)
+                        {
+                          
+                            <tr>
+                                <td>@($"{l.TimeStart.Value.ToShortTimeString()} - {l.TimeEnd.Value.ToShortTimeString()}") </td>
+                                <td>@($"{l.Discipline.Name}")  </td>
+                            </tr>
+                        }
+                    }
+
+                </tbody>
+            </table>
+        </form>
+    }
+}
+@inject ILesson iLess
+@inject ISchedule shed
+@code {
+    public DateTime dateToDay = DateTime.Today;  //new DateTime(2024, 3, 1, 0, 0, 0); // DateTime.Today;
+    public DateTime dateToDay1 { get; set; }
+
+    public DayOfWeek currentDayOfWeek;
+    CultureInfo myCI = new CultureInfo("en-US");
+    System.Globalization.Calendar myCal;
+
+    int currentWeek;
+    protected override async Task OnInitializedAsync()
+    {
+        StateHasChanged();
+        myCal = myCI.Calendar;
+        currentDayOfWeek = dateToDay.DayOfWeek;
+        dateToDay1 = dateToDay;
+        currentWeek = CultureInfo.CurrentCulture.Calendar.GetWeekOfYear(dateToDay1, CalendarWeekRule.FirstFourDayWeek, currentDayOfWeek) - 1; //CalendarWeekRule.FirstFourDayWeek
+                                                                                                                                              // var s = dateToDay - TimeSpan.FromDays(dateToDay.DayOfWeek == DayOfWeek.Sunday ? 6 : (byte)dateToDay.DayOfWeek - 1);
+                                                                                                                                              // // s <= t
+                                                                                                                                              // var f = s + TimeSpan.FromDays(6);
+
+        Sсhedules = AddfakeDAY((await shed.GetdataTime(dateToDay1)));
+
+    }
+    private List<DB2.Model.Sсhedule> MyFilter(List<DB2.Model.Sсhedule> s) // проблемы
+    {
+        if (UserAut.GroupId == null || s.Count == 0) return s;
+
+        var filteredSchedules =new  List<DB2.Model.Sсhedule>();
+
+        return filteredSchedules
+                   .Select(schedule => new Sсhedule
+                   {
+                       Id = schedule.Id,
+                       dateTime = schedule.dateTime,
+                       Lessons = schedule.Lessons
+                               .Where(lesson => lesson.Groups.Id == UserAut.Id)
+                               .ToList()
+                   })
+                   .ToList();
+
+    }
+    private async Task NextWeek()
+    {
+        dateToDay1 = dateToDay1 + TimeSpan.FromDays(7);
+        Sсhedules = AddfakeDAY((await shed.GetdataTime(dateToDay1)));
+        currentWeek = CultureInfo.CurrentCulture.Calendar.GetWeekOfYear(dateToDay1, CalendarWeekRule.FirstFourDayWeek, currentDayOfWeek) - 1;
+    }
+    private async Task LastWeek()
+    {
+        dateToDay1 = dateToDay1 - TimeSpan.FromDays(7);
+        Sсhedules = AddfakeDAY((await shed.GetdataTime(dateToDay1)));
+        currentWeek = CultureInfo.CurrentCulture.Calendar.GetWeekOfYear(dateToDay1, CalendarWeekRule.FirstFourDayWeek, currentDayOfWeek) - 1;
+    }
+    private List<DB2.Model.Sсhedule> Sсhedules;
+
+    private List<DB2.Model.Sсhedule> AddfakeDAY(List<DB2.Model.Sсhedule> s)
+    {
+        if (s.Count == 7 || s.Count == 0) return s;
+
+        var weekMonday = s[0].dateTime.WeekMonday();
+
+        List<DB2.Model.Sсhedule> newS = new List<Sсhedule>(7);
+
+        var cur = 0;
+        for (int i = 0; i <= 6; i++)
+        {
+            if (cur >= s.Count || s[cur].dateTime.WeekDayFromMonday() != i)
+            {
+                newS.Add(new Sсhedule { dateTime = weekMonday + TimeSpan.FromDays(i) });
+            }
+            else
+            {
+                newS.Add(s[cur]);
+                cur++;
+            }
+        }
+
+        return newS;
+
+    }
+    private string GetNameWeek(DateTime date)
+    {
+        CultureInfo rusCult = CultureInfo.CreateSpecificCulture("ru-Ru");
+        var s = date.ToString("dddd", rusCult);
+        char first = char.ToUpper(s[0]);
+        string rest = s.Substring(1).ToLower();
+        return first+rest;
+    }
+
+    private  async Task<bool> СrutchSort( int idgroup)
+    {
+        if (UserAut.Role != "L") return false;
+        return await iLess.CrutchFindTryeOrFalse(UserAut.Id.Value, idgroup);
+    }
+    // //DateTime dateToDay = DateTime.Today;
+    // var s = dateToDay - TimeSpan.FromDays(dateToDay.DayOfWeek == DayOfWeek.Sunday ? 6 : (byte)dateToDay.DayOfWeek - 1);
+    // // s <= t && t <= f
+    // var f = s + TimeSpan.FromDays(6);
+
+    //     return await db.Schedules.Include(x=>x.Lessons)
+    //         .ThenInclude(x=>x.Discipline)
+    //         .Where(t=> s <= t.dateTime && t.dateTime <= f)
+    //         .ToListAsync();
+
+}

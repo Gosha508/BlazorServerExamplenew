@@ -1,0 +1,67 @@
+﻿<div class="top-row pl-4 navbar navbar-dark">
+    <a class="navbar-brand" href="">ИС</a>
+    <button class="navbar-toggler" @onclick="ToggleNavMenu">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+</div>
+
+<div class="@NavMenuCssClass" @onclick="ToggleNavMenu">
+    <ul class="nav flex-column">
+        <li class="nav-item px-3">
+            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+                <span class="oi oi-home" aria-hidden="true"></span> Home
+            </NavLink>
+        </li>
+        @if (UserAut.Id != null)
+        {
+            <li class="nav-item px-3">
+                <NavLink class="nav-link" href="calendar" Match="NavLinkMatch.All">
+                <span class="oi oi-calendar" aria-hidden="true"></span> Календарь
+            </NavLink>
+
+        </li>
+            <li class="nav-item px-3">
+                <NavLink class="nav-link" href="WeekPage1" Match="NavLinkMatch.All">
+                    <span class="oi oi-calendar2-week" aria-hidden="true"></span> Неделя
+                </NavLink>
+
+            </li>
+            <li class="nav-item px-3">
+                <NavLink class="nav-link" href="listdisc" Match="NavLinkMatch.All">
+                    <span class="oi oi-book" aria-hidden="true"></span> Дисциплины
+                </NavLink>
+            </li>
+            <li class="nav-item px-3">
+                <NavLink class="nav-link" href="groups" Match="NavLinkMatch.All">
+                    <span class="oi oi-people" aria-hidden="true"></span> Группы
+                </NavLink>
+            </li>
+            <li class="nav-item px-3">
+                <NavLink class="nav-link" href="setting" Match="NavLinkMatch.All">
+                    <span class="oi oi-people" aria-hidden="true"></span> Настройка
+                </NavLink>
+            </li>
+        }
+        @*<li class="nav-item px-3">
+            <NavLink class="nav-link" href="counter">
+                <span class="oi oi-plus" aria-hidden="true"></span> Counter
+            </NavLink>
+        </li>
+        <li class="nav-item px-3">
+            <NavLink class="nav-link" href="fetchdata">
+                <span class="oi oi-list-rich" aria-hidden="true"></span> Fetch data
+            </NavLink>
+        </li>*@
+    </ul>
+</div>
+
+@code {
+    private bool collapseNavMenu = true;
+
+    private string NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+
+    private void ToggleNavMenu()
+    {
+        collapseNavMenu = !collapseNavMenu;
+    }
+}

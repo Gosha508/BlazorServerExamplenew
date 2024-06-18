@@ -1,0 +1,87 @@
+﻿<h3>Академическая успеваемость группы</h3>
+@page "/AcademicPerformanceOfTheGroup/{idGroup:int}"
+<div>
+    Дисциплины/направления:
+    <select class="form-control" @onchange="async (e) => await OnDisciplineChange(e)">
+        @foreach (var dis in ListDisciplines)
+        {
+            <option value="@dis.Id"> @dis.Name </option>
+        }
+    </select>
+    <div> @SelectedIdDiscip  </div>
+</div>
+
+@foreach (var user in Groups.MyUser)
+{
+    var list = GeListtAttendanceFromUser(user.Id, SelectedIdDiscip).Result;
+    <div> @user.Name</div>
+    <table class="table">
+        <thead>
+            @for (int i = 0; i < list.Count; i++)
+            {
+              <th> 
+                  @list[i].Lesson.TimeStart.Value.ToShortDateString();
+              </th>
+            }
+        </thead>
+
+        <tbody>
+            @for (int i = 0; i < list.Count; i++)
+            {
+            <td>  @list[i].Grades </td>
+            }
+        </tbody>
+
+    </table>
+}
+@inject IGroups groups
+@inject ILesson lessons
+@inject IDiscipline disciplines
+@inject IAttendance attend
+@code {
+    [Parameter]
+    public int idGroup { get; set; }
+
+    List<Discipline> ListDisciplines { get; set; }
+    private int SelectedIdDiscip { get; set; } = 999;
+
+    
+
+    DB2.Model.Groups Groups { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        ListDisciplines = await disciplines.GetAll();
+        Groups = await groups.GetGroupbyId(idGroup);
+
+
+        //   await GetLessonsByDisciplinesId(SelectedIdDiscip, idGroup);
+    }
+    List<Lesson> ListLesson { get; set; } // не забыть сделать сортировку по датам , а то пздц
+    private async Task GetLessonsByDisciplinesId(int idd, int idg)
+    {
+        ListLesson = await lessons.GetLessonsByDisciplinesId(idd, idg);
+    }
+    private async Task OnDisciplineChange(ChangeEventArgs e)
+    {
+        SelectedIdDiscip = int.Parse(e.Value.ToString());
+        //   await GetLessonsByDisciplinesId(SelectedIdDiscip, idGroup);
+
+    }
+
+    private async Task<List<Attendance>> GeListtAttendanceFromUser(int idLesson, int idDisc)
+    {
+        return await attend.GetAttendanceFromUser(idLesson, idDisc);
+    }
+    // private async Task<Attendance> GetAttendanceFromUser(int idatten)
+    // {
+    //     return await attend.GetAttendanceFromleaarn(idatten);
+    // }
+    List<Lesson> ListLesson1 { get; set; }
+    private async Task<List<Lesson>> GetLessonFromUser(int iduser)
+    {
+
+        return await lessons.GetAllUser(iduser);
+    }
+    // через атенденсе вытащить лессон
+}

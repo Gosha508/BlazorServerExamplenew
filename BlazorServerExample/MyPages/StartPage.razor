@@ -1,0 +1,38 @@
+﻿@using BlazorServerExample.Services
+@using BlazorServerExample.MyPages.REGandAUT;
+@page "/start"
+@if (UserAut.Id == null)
+{
+    @if (IsRegisterMode)
+    {
+        <REGpage />
+    }
+    else
+    {
+        <AUTpage />
+    }
+    <button type="button" class="btn btn-outline-dark" @onclick="@(async()=> { ToggleRegisterMode(); } )">@((IsRegisterMode) ? "Перейти к авторизации" : "Перейти к регистрации")</button>
+
+}
+else
+{
+    <USERpage />
+}
+
+
+@inject NavigationManager NavigationManager
+@code {
+    private bool IsRegisterMode { get; set; } = false;
+  
+
+    protected override async Task OnInitializedAsync()
+    {
+        StateHasChanged();
+    }
+    private void ToggleRegisterMode()
+    {
+        IsRegisterMode = !IsRegisterMode;
+
+    }
+
+}

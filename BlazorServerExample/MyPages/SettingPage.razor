@@ -1,0 +1,27 @@
+﻿<h3>Настройка</h3>
+@page "/setting"
+<div>
+    <h4>@("Доступ Т")</h4>
+    <div style="display: flex; flex-direction: column; align-items: flex-start;">
+        <label for="nmail" style="width: 70px;">Код: </label>
+        <input type="email" id="email" @bind="@privatecode" />
+    </div>
+    <button type="button" @onclick="@(()=>giveTeachRole())">@("Открыть доступ")</button>
+
+</div>
+@inject IMyUser myuser
+@code {
+    private string privatecode { get; set; }
+    private async Task  giveTeachRole()
+    {
+        if (UserAut.Id != null && privatecode == UserAut.userCode.ToString())
+        {
+            var a = await myuser.GetAsync(UserAut.Id.Value);
+            a.Role = "T";
+            UserAut.Role = "T";
+            myuser.Update(a);
+        }
+       
+        
+    }
+}

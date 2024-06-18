@@ -1,0 +1,111 @@
+﻿
+@page "/GettingData"
+
+@if (UserAut.Role != "T")
+{
+    <div style="display: flex; flex-direction: column; align-items: flex-start;">
+        <label for="nmail" style="width: 70px;">Поиск: </label>
+        <input type="text" id="text1" @bind="@text" />
+        <button @onclick="@SortByName"> Найти </button>
+        <button @onclick="@SortReset"> сброс </button>
+    </div>
+    <table class="table">
+        <thead>
+            <tr>
+                <th> Дата </th>
+                <th> Название </th>
+                <th> Состояние </th>
+                <th> Оценка? </th>
+                <th> Переход </th>
+            </tr>
+        </thead>
+
+        <tbody>
+            @foreach (var a in attendances)
+            {
+            <tr>
+                <td> @a.Lesson.Sсhedule.dateTime.ToShortDateString() </td>
+                <td> @a.Lesson.Discipline.Name </td>
+                 <td> @(ReturnString(a.IsPresent).Result)</td>
+                <td> @a.Grades </td>
+                <td> <button class="btn btn-outline-dark" type="button" @onclick="@(async()=> {await OpenLesson(a.Lesson);  } )">@("Открыть") </button></td>
+            </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th> Дата </th>
+                <th> Название </th>
+                <th> Состояние </th>
+                <th> Переход </th>
+            </tr>
+        </thead>
+
+        <tbody>
+            @foreach (var a in LessonsT)
+            {
+            <tr>
+                <td> @a.Sсhedule.dateTime.ToShortDateString() </td>
+                <td> @a.Discipline.Name </td>
+                <td> @a.Groups.Name </td>
+                <td> <button class="btn btn-outline-dark" type="button" @onclick="@(async()=> {await OpenLesson(a);  } )">@("Открыть")</button>
+                </td>
+            </tr>
+            }
+        </tbody>
+    </table>
+}
+@inject IMyUser myuser
+@inject IAttendance attendance
+@inject ILesson lesson
+@inject NavigationManager NavigationManager
+@code {
+    // доработать вывод данных (без всяких true false)
+    string text { get; set; }
+    List<Attendance> attendances;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await SortReset();
+        await LessonSortReset();
+    }
+
+    private async Task SortByName()
+    {
+        attendances = attendances.Where(x => x.Lesson.Discipline.Name.Contains(text)).ToList();
+
+    }
+    private async Task SortReset()
+    {
+        attendances = await attendance.GetAttenUser(UserAut.Id.Value);
+    }
+    List<Lesson> LessonsT;
+    private async Task LessonSortReset()
+    {
+        LessonsT = await lesson.GetAllUser(UserAut.Id.Value);
+
+    }
+    private async Task OpenLesson(Lesson lesson)
+    {
+        NavigationManager.NavigateTo($"/OpenLesson/{lesson.Id}");
+
+    }
+    private async Task<string> ReturnString(bool p)
+    {
+
+            if (p == true)
+            {
+                return "✓";
+            }
+            else
+            {
+                return "Х";
+            }
+
+    }
+}

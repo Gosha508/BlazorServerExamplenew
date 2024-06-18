@@ -1,0 +1,72 @@
+﻿<h3>Группы</h3>
+@page "/groups"
+
+@if (UserAut.Role == "T")
+{<h3>Создать группу </h3>
+    <div style="display: flex; flex-direction: column; align-items: flex-start;">
+    <label for="Textpole1">Название :</label>
+    <input type="text" id="Textpole1" @bind="@TextField" />
+</div>
+    <button class="btn btn-outline-dark" type="button" @onclick="@CreateGroup"> Добавить  </button>
+}
+<h2>Список дисциплин</h2>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Название</th>
+            <th>Открыть</th>
+            <th>Сводка </th>
+            <th>Удалить</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (ListGroups != null)
+        {
+            @foreach (var d in ListGroups)
+            {
+                <tr>
+                    <td>@d.Name</td>
+                    <td>
+                        <button style="background-color:darkcyan" type="button" class="oi oi-arrow-thick-right btn btn-outline-dark" @onclick="@(async () => await OpenGroup(d.Id))"> </button>
+                    </td>
+                    @if (UserAut.Role == "T"){
+                        <td> <button style="background-color:darkcyan" type="button" class="oi oi-arrow-thick-right btn btn-outline-dark" @onclick="@(async () => await OpenAcademicPerformanceOfTheGroup(d.Id))"> </button></td>
+                        <td><button style="background-color:red" type="button" class="oi oi-trash btn btn-outline-dark " @onclick="@(async () => await DeleteGroup(d.Id))"> </button></td>
+                    }
+                </tr>
+            }
+        }
+    </tbody>
+</table>
+@code {
+@inject IGroups Groups;
+    @inject IDiscipline disc;//добавить дисциплину?
+
+    @inject NavigationManager NavigationManager ;
+    List<Groups> ListGroups;
+    protected override async Task OnInitializedAsync()
+    {
+        ListGroups =  await Groups.GetAll();
+    }
+    private string TextField { get; set; }
+   
+    private async Task CreateGroup()
+    {
+        await Groups.CreateAsync(new Groups { Name = TextField });
+        ListGroups = await Groups.GetAll();
+        // StateHasChanged();
+    }
+    private async Task DeleteGroup(int id)
+    {
+        await Groups.RemoveAsync(id);
+        ListGroups = await Groups.GetAll();
+    }
+    private async Task OpenGroup(int idgroup)
+    {
+        NavigationManager.NavigateTo($"/OpenGroupPage/{idgroup}");
+    }
+    private async Task OpenAcademicPerformanceOfTheGroup(int idgroup)
+    {
+        NavigationManager.NavigateTo($"/AcademicPerformanceOfTheGroup/{idgroup}");
+    }
+}

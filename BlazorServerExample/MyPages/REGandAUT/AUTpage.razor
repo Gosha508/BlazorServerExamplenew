@@ -1,0 +1,74 @@
+﻿@page "/aut"
+<h3>Авторизация</h3>
+<div>
+    <form>
+        @*<div style="display: flex; flex-direction: column; align-items: flex-start;">
+                <label for="newUserName">ФИО :</label>
+                <input type="text" id="UserName" @bind="@Username" />
+            </div>*@
+
+        <div style="display: flex; flex-direction: column; align-items: flex-start;">
+            <label for="nmail" style="width: 70px;">Почта: </label>
+            <input type="email" id="email" @bind="@Email" />
+        </div>
+
+        <div style="display: flex; flex-direction: column; align-items: flex-start;">
+            <label for="Password">Пароль:</label>
+            <input type="password" id="newPassword" @bind="@Password" />
+        </div>
+        <button class="btn btn-outline-dark" type="button" @onclick="@Aut">@("Авторизация")</button>
+        <div>
+            @text
+        </div>
+    </form>     
+</div>
+@inject IMyUser MyUser
+@code {
+    @inject NavigationManager NavigationManager
+    //  private string Username { get; set; }
+    private string Email { get; set; }
+    private string Password { get; set; }
+    private string text { get; set; }
+    protected override async Task OnInitializedAsync()
+    {
+
+    }
+    private async Task Aut()
+    {
+        var user = await MyUser.LoginUser(Email, Password);
+        if (user != null)
+        {
+            try
+            {
+                UserAut.Id = user.Id;
+                UserAut.Email = user.Email;
+                UserAut.Name = user.Name;
+                UserAut.Role = user.Role;
+                if (user.Groups != null)
+                {
+                    UserAut.GroupId = user.Groups.Id;
+                }
+                else
+                {
+                    UserAut.GroupId = null; 
+                }
+                text = "Авторизация успешна";
+                // StateHasChanged();
+                NavigationManager.NavigateTo("/start", forceLoad: true);
+            }
+            catch{}
+    }
+        else
+        {
+            UserAut.Id = null;
+            UserAut.Email = null;
+            UserAut.Name = null;
+            UserAut.Role = null;
+            UserAut.GroupId = null;
+
+            text = "Не удачная попытка авторизации, проверьте корректность данных";
+        }
+    }
+
+
+}
